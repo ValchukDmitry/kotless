@@ -18,6 +18,7 @@ configureIdea {
 subprojects {
     apply {
         plugin("kotlin")
+        plugin("maven-publish")
         plugin("tanvd.kosogor")
         plugin("io.gitlab.arturbosch.detekt")
     }
