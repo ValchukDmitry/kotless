@@ -1,16 +1,16 @@
 package io.kotless.plugin.gradle
 
 import io.kotless.AwsResource
-import io.kotless.DSLType
 import io.kotless.InternalAPI
+import io.kotless.plugin.gradle.dsl.descriptor
 import io.kotless.plugin.gradle.dsl.kotless
 import io.kotless.plugin.gradle.tasks.gen.KotlessLocalGenerateTask
 import io.kotless.plugin.gradle.tasks.local.KotlessLocalRunTask
 import io.kotless.plugin.gradle.tasks.local.LocalStackRunner
 import io.kotless.plugin.gradle.tasks.terraform.TerraformOperationTask
 import io.kotless.plugin.gradle.utils.AWSUtils
-import io.kotless.plugin.gradle.utils.Groups
-import io.kotless.plugin.gradle.utils.myCreate
+import io.kotless.plugin.gradle.utils.gradle.Groups
+import io.kotless.plugin.gradle.utils.gradle.myCreate
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.plugins.ApplicationPluginConvention
@@ -26,11 +26,7 @@ internal object KotlessLocalTasks {
         with(tasks) {
             val local = LocalStackRunner(kotless.extensions.local.useAWSEmulation, AwsResource.forLocalStart)
 
-            convention.getPlugin<ApplicationPluginConvention>().mainClassName = when (kotless.config.dsl.typeOrDefault) {
-                DSLType.Kotless -> "io.kotless.local.MainKt"
-                DSLType.Ktor -> "io.kotless.local.ktor.MainKt"
-                DSLType.SpringBoot -> "io.kotless.local.spring.MainKt"
-            }
+            convention.getPlugin<ApplicationPluginConvention>().mainClassName = kotless.config.dsl.typeOrDefault.descriptor.localEntryPoint
 
             if (kotless.extensions.local.useAWSEmulation) {
                 setupLocalWithAWSEmulation(local, download)
@@ -41,19 +37,17 @@ internal object KotlessLocalTasks {
     }
 
     private fun TaskContainer.setupLocal(local: LocalStackRunner) {
-        val run = getByName("run")
         val classes = getByName("classes")
 
         myCreate<KotlessLocalRunTask>("local") {
             localstack = local
 
             dependsOn(classes)
-        }.finalizedBy(run)
+        }
     }
 
     private fun Project.setupLocalWithAWSEmulation(local: LocalStackRunner, download: Task) {
         with(tasks) {
-            val run = getByName("run")
             val classes = getByName("classes")
 
             val startLocalStack = myCreate<LocalStackRunner.Start>("localstack_start") {
@@ -95,7 +89,9 @@ internal object KotlessLocalTasks {
                 localstack = local
 
                 dependsOn(classes, configure)
-            }.finalizedBy(run, stopLocalStack)
+            }.onShutDown({
+                stopLocalStack.act()
+            })
         }
     }
 }

@@ -1,18 +1,18 @@
 package io.kotless.gen
 
 import io.kotless.Schema
-import io.kotless.Webapp
-import io.kotless.hcl.HCLEntity
+import io.kotless.Application
 import io.kotless.utils.Storage
 import io.kotless.utils.Text
 import io.kotless.utils.plusIterable
+import io.terraformkt.hcl.HCLEntity
 
 /**
  * Context of current Terraform generation
  *
  * It is populated by outputs of [GenerationFactory] and resources created by them as well
  */
-class GenerationContext(val schema: Schema, val webapp: Webapp) {
+class GenerationContext(val schema: Schema, val webapp: Application) {
 
     val output = Output()
 
@@ -38,13 +38,13 @@ class GenerationContext(val schema: Schema, val webapp: Webapp) {
     val entities = Entities()
 
     class Entities {
-        private val all: HashSet<HCLEntity> = HashSet()
+        private val all: HashSet<HCLEntity.Named> = HashSet()
 
-        fun register(entities: Iterable<HCLEntity>) {
+        fun register(entities: Iterable<HCLEntity.Named>) {
             this.all.addAll(entities)
         }
 
-        fun register(vararg entities: HCLEntity) {
+        fun register(vararg entities: HCLEntity.Named) {
             register(entities.toList())
         }
 

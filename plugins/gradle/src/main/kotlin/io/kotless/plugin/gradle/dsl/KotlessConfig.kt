@@ -2,8 +2,8 @@ package io.kotless.plugin.gradle.dsl
 
 import io.kotless.DSLType
 import io.kotless.KotlessConfig.Optimization.MergeLambda
-import io.kotless.plugin.gradle.utils.Dependencies
-import io.kotless.plugin.gradle.utils.myShadowJar
+import io.kotless.plugin.gradle.utils.gradle.Dependencies
+import io.kotless.plugin.gradle.utils.gradle.myShadowJar
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import java.io.File
@@ -53,7 +53,7 @@ class KotlessConfig(project: Project) : Serializable {
             require(types.isNotEmpty()) {
                 """
                 |Kotless was unable to determine DSL type of application.
-                |Either dependency with one of the DSLs (`lang`, `ktor-lang`, `spring-boot-lang`) should be added, or DSL should be specified manually.
+                |Either dependency with one of the DSLs (`kotless-lang`, `ktor-lang`, `spring-boot-lang`) should be added, or DSL should be specified manually.
                 |""".trimMargin()
             }
             require(types.size <= 1) {
@@ -111,9 +111,9 @@ class KotlessConfig(project: Project) : Serializable {
     class Terraform : Serializable {
         /**
          * Version of Terraform to use.
-         * By default, `0.11.14`
+         * By default, `0.12.29`
          */
-        var version: String = "0.11.14"
+        var version: String = "0.12.29"
 
         /** AWS profile from a local machine to use for Terraform operations authentication */
         lateinit var profile: String
@@ -151,7 +151,7 @@ class KotlessConfig(project: Project) : Serializable {
         @KotlessDSLTag
         class AWSProvider : Serializable {
             /** Version of AWS provider to use */
-            var version = "1.60.0"
+            var version = "2.70.0"
 
             var profile: String? = null
 
@@ -195,9 +195,9 @@ class KotlessConfig(project: Project) : Serializable {
          * Lambdas cannot be autowarmed with interval more than hour, since it has no practical sense
          */
         @KotlessDSLTag
-        data class Autowarm(val enable: Boolean, val minutes: Int) : Serializable
+        data class Autowarm(val enable: Boolean, val minutes: Int = 5) : Serializable
 
-        var autowarm: Autowarm = Autowarm(true, 5)
+        var autowarm: Autowarm = Autowarm(enable = true)
     }
 
     internal val optimization: Optimization = Optimization()
