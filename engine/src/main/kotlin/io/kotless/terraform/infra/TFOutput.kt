@@ -1,12 +1,15 @@
 package io.kotless.terraform.infra
 
-import io.kotless.hcl.HCLEntity
 import io.kotless.utils.withIndent
+import io.terraformkt.hcl.HCLEntity
 
 /** Declaration of Terraform output */
-class TFOutput(val name: String, val value: String) : HCLEntity() {
+class TFOutput(override val hcl_name: String, val value: String) : HCLEntity.Named() {
+    override val hcl_ref: String
+        get() = "output.$hcl_name"
+
     override fun render(): String = """
-        |output "$name" {
+        |output "$hcl_name" {
         |${"value = \"${value}\"".withIndent()}
         |}
         """.trimMargin()

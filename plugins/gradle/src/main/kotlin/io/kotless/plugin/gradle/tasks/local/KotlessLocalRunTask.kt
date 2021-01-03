@@ -1,12 +1,9 @@
 package io.kotless.plugin.gradle.tasks.local
 
-import io.kotless.Constants
-import io.kotless.DSLType
-import io.kotless.InternalAPI
+import io.kotless.*
 import io.kotless.parser.LocalParser
-import io.kotless.plugin.gradle.dsl.KotlessDSL
-import io.kotless.plugin.gradle.dsl.kotless
-import io.kotless.plugin.gradle.utils.*
+import io.kotless.plugin.gradle.dsl.*
+import io.kotless.plugin.gradle.utils.gradle.*
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.dependencies
@@ -35,6 +32,13 @@ internal open class KotlessLocalRunTask : DefaultTask() {
     val myAllSources: Set<File>
         get() = project.myKtSourceSet.toSet()
 
+    private val finalizers = ArrayList<() -> Unit>()
+
+    fun onShutDown(vararg finalizer: () -> Unit): KotlessLocalRunTask {
+        finalizers.addAll(finalizer)
+        return this
+    }
+
     @get:Internal
     lateinit var localstack: LocalStackRunner
 
@@ -43,16 +47,16 @@ internal open class KotlessLocalRunTask : DefaultTask() {
     fun act() = with(project) {
         val dsl = Dependencies.dsl(project)
 
-        require(dsl.isNotEmpty()) { "Cannot find \"lang\", \"ktor-lang\" or \"spring-boot-lang\" dependencies. One of them required for local start." }
-        require(dsl.size <= 1) { "Only one dependency should be used for DSL: either \"lang\", \"ktor-lang\" or \"spring-boot-lang\"." }
+        require(dsl.isNotEmpty()) { "Cannot find \"kotless-lang\", \"ktor-lang\" or \"spring-boot-lang\" dependencies. One of them required for local start." }
+        require(dsl.size <= 1) { "Only one dependency should be used for DSL: either \"kotless-lang\", \"ktor-lang\" or \"spring-boot-lang\"." }
 
         val (type, dependency) = dsl.entries.single()
 
         dependencies {
-            myLocal("io.kotless", "${type.lib}-local", dependency.version ?: error("Explicit version is required for Kotless DSL dependency."))
+            myLocal("io.kotless", type.descriptor.localLibrary, dependency.version ?: error("Explicit version is required for Kotless DSL dependency."))
         }
 
-        tasks.myGetByName<JavaExec>("run").apply {
+        val run = tasks.myGetByName<JavaExec>("run").apply {
             classpath += files(myLocal().files)
 
             environment[Constants.Local.serverPort] = myKotless.extensions.local.port
@@ -77,6 +81,19 @@ internal open class KotlessLocalRunTask : DefaultTask() {
             if (myKotless.extensions.local.useAWSEmulation) {
                 environment.putAll(localstack.environment)
             }
+
+            isIgnoreExitValue = true
+        }
+
+        try {
+            run.exec()
+        } catch (e: Throwable) {
+            logger.lifecycle("Gracefully shutting down Kotless local")
+            //Remove interrupted flag before execution of finalizers
+            Thread.interrupted()
+            finalizers.forEach { it.invoke() }
+            //Rethrow exception after finalizers executed
+            throw e
         }
     }
 }

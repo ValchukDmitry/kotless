@@ -1,25 +1,26 @@
 package io.kotless.gen.factory.route.dynamic
 
 import io.kotless.HttpMethod
-import io.kotless.Webapp
+import io.kotless.Application
 import io.kotless.gen.GenerationContext
 import io.kotless.gen.GenerationFactory
 import io.kotless.gen.factory.apigateway.RestAPIFactory
 import io.kotless.gen.factory.info.InfoFactory
 import io.kotless.gen.factory.resource.dynamic.LambdaFactory
 import io.kotless.gen.factory.route.AbstractRouteFactory
-import io.kotless.terraform.provider.aws.resource.apigateway.api_gateway_integration
-import io.kotless.terraform.provider.aws.resource.apigateway.api_gateway_method
-import io.kotless.terraform.provider.aws.resource.lambda.lambda_permission
+import io.kotless.terraform.functions.link
+import io.terraformkt.aws.resource.apigateway.api_gateway_integration
+import io.terraformkt.aws.resource.apigateway.api_gateway_method
+import io.terraformkt.aws.resource.lambda.lambda_permission
 
-object DynamicRouteFactory : GenerationFactory<Webapp.ApiGateway.DynamicRoute, DynamicRouteFactory.Output>, AbstractRouteFactory() {
+object DynamicRouteFactory : GenerationFactory<Application.ApiGateway.DynamicRoute, DynamicRouteFactory.Output>, AbstractRouteFactory() {
     data class Output(val integration: String)
 
-    override fun mayRun(entity: Webapp.ApiGateway.DynamicRoute, context: GenerationContext) = context.output.check(context.webapp.api, RestAPIFactory)
+    override fun mayRun(entity: Application.ApiGateway.DynamicRoute, context: GenerationContext) = context.output.check(context.webapp.api, RestAPIFactory)
         && context.output.check(context.schema.lambdas[entity.lambda]!!, LambdaFactory)
         && context.output.check(context.webapp, InfoFactory)
 
-    override fun generate(entity: Webapp.ApiGateway.DynamicRoute, context: GenerationContext): GenerationFactory.GenerationResult<Output> {
+    override fun generate(entity: Application.ApiGateway.DynamicRoute, context: GenerationContext): GenerationFactory.GenerationResult<Output> {
         val api = context.output.get(context.webapp.api, RestAPIFactory)
         val lambda = context.output.get(context.schema.lambdas[entity.lambda]!!, LambdaFactory)
         val info = context.output.get(context.webapp, InfoFactory)
@@ -30,7 +31,7 @@ object DynamicRouteFactory : GenerationFactory<Webapp.ApiGateway.DynamicRoute, D
         val aws_name = context.names.aws(entity.path.parts, entity.method.name).ifBlank { "root_resource" }
 
         val method = api_gateway_method(tf_name) {
-            depends_on = arrayOf(resourceApi.ref)
+            depends_on = arrayOf(link(resourceApi.ref))
 
             rest_api_id = api.rest_api_id
             resource_id = resourceApi.id
@@ -48,7 +49,7 @@ object DynamicRouteFactory : GenerationFactory<Webapp.ApiGateway.DynamicRoute, D
         }
 
         val integration = api_gateway_integration(tf_name) {
-            depends_on = arrayOf(resourceApi.ref)
+            depends_on = arrayOf(link(resourceApi.ref))
 
             rest_api_id = api.rest_api_id
             resource_id = resourceApi.id

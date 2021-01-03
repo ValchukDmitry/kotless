@@ -1,7 +1,7 @@
 package io.kotless.parser.processor.permission
 
 import io.kotless.AwsResource
-import io.kotless.Permission
+import io.kotless.permission.Permission
 import io.kotless.PermissionLevel
 import io.kotless.dsl.lang.DynamoDBTable
 import io.kotless.dsl.lang.S3Bucket
@@ -47,6 +47,7 @@ object PermissionsProcessor {
                         val id = annotation.getValue(context, DynamoDBTable::table)!!
                         val level = annotation.getEnumValue(context, DynamoDBTable::level)!!
                         permissions.add(Permission(AwsResource.DynamoDB, level, setOf("table/$id")))
+                        permissions.add(Permission(AwsResource.DynamoDBIndex, level, setOf("table/$id/index/*")))
                     }
                 }
             }

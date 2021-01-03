@@ -3,11 +3,10 @@ package io.kotless.plugin.gradle
 import io.kotless.plugin.gradle.dsl.kotless
 import io.kotless.plugin.gradle.tasks.gen.KotlessGenerateTask
 import io.kotless.plugin.gradle.tasks.terraform.TerraformOperationTask
-import io.kotless.plugin.gradle.utils.Groups
-import io.kotless.plugin.gradle.utils.myCreate
+import io.kotless.plugin.gradle.utils.gradle.Groups
+import io.kotless.plugin.gradle.utils.gradle.myCreate
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.kotlin.dsl.get
 
 /**
  * Utils to setup deploy tasks for all DSLs
@@ -15,7 +14,7 @@ import org.gradle.kotlin.dsl.get
 internal object KotlessDeployTasks {
     fun Project.setupDeployTasks(download: Task) {
         if (kotless.config.bucket.isEmpty()) {
-            logger.warn("Configuration succeeded, but Kotless requires `kotless { bucket = \"...\" }` for actual deployment")
+            logger.warn("Configuration succeeded, but Kotless requires `kotless { config { bucket = \"...\" } }` for actual deployment")
             logger.warn("Deployment tasks will NOT be added to this project")
             return
         }
@@ -26,7 +25,7 @@ internal object KotlessDeployTasks {
             val init = myCreate<TerraformOperationTask>("initialize") {
                 group = Groups.`kotless setup`
 
-                dependsOn(download, generate, project.tasks[kotless.config.myArchiveTask])
+                dependsOn(download, generate, kotless.config.myArchiveTask)
 
                 root = kotless.config.deployGenDirectory
 
