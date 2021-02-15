@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import tanvd.kosogor.defaults.configureIdea
 
 group = "io.kotless"
-version = "0.1.7-beta-4"
+version = "0.1.8"
 
 plugins {
     id("tanvd.kosogor") version "1.0.9" apply true
@@ -26,6 +26,7 @@ subprojects {
     repositories {
         jcenter()
         gradlePluginPortal()
+        mavenLocal()
     }
 
     tasks.withType<KotlinJvmCompile> {
@@ -38,20 +39,20 @@ subprojects {
         }
     }
 
-    detekt {
-        parallel = true
-
-        config = rootProject.files("detekt.yml")
-
-        reports {
-            xml {
-                enabled = false
-            }
-            html {
-                enabled = false
-            }
-        }
-    }
+//    detekt {
+//        parallel = true
+//
+//        config = rootProject.files("detekt.yml")
+//
+//        reports {
+//            xml {
+//                enabled = false
+//            }
+//            html {
+//                enabled = false
+//            }
+//        }
+//    }
 
     afterEvaluate {
         System.setProperty("gradle.publish.key", System.getenv("gradle_publish_key") ?: "")

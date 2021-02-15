@@ -24,7 +24,8 @@ internal fun KotlessDSL.toSchema(): KotlessConfig {
             KotlessConfig.Optimization(
                 optimization.mergeLambda,
                 KotlessConfig.Optimization.Autowarm(optimization.autowarm.enable, optimization.autowarm.minutes)
-            )
+            ),
+            "azure"
         )
     }
 }
