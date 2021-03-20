@@ -25,7 +25,9 @@ internal fun KotlessDSL.toSchema(): KotlessConfig {
                 optimization.mergeLambda,
                 KotlessConfig.Optimization.Autowarm(optimization.autowarm.enable, optimization.autowarm.minutes)
             ),
-            "azure"
+            "azure",
+            resourceGroup,
+            storageAccountName
         )
     }
 }

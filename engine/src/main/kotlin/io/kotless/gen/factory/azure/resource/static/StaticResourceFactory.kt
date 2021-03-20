@@ -9,22 +9,23 @@ import io.terraformkt.azurerm.resource.storage.storage_blob
 import io.terraformkt.hcl.ref
 
 object StaticResourceFactory : GenerationFactory<StaticResource, StaticResourceFactory.Output> {
-    data class Output(val storageAccount: String, val storageContainer: String)
+    data class Output(val blobName: String)
 
-    override fun mayRun(entity: StaticResource, context: GenerationContext) = true
+    override fun mayRun(entity: StaticResource, context: GenerationContext) = context.output.check(context.webapp, InfoFactory)
 
     override fun generate(entity: StaticResource, context: GenerationContext): GenerationFactory.GenerationResult<Output> {
+        val resourceName = "copy_${entity.file.path.replace(".", "_").replace("/", "_")}"
         val storageAccount = context.output.get(context.webapp, InfoFactory).storageAccount
         val storageContainer = context.output.get(context.webapp, InfoFactory).storageContainer
-
         val storageBlob = storage_blob(context.names.tf(context.schema.config.bucket, entity.path.parts)) {
-            name = context.schema.config.bucket
+            name = resourceName
             storage_account_name = storageAccount::name.ref
             storage_container_name = storageContainer::name.ref
             type = "Block"
+            content_type = entity.mime.mimeText
             source = path(entity.file)
         }
 
-        return GenerationFactory.GenerationResult(Output(storageAccount::name.ref, storageContainer::name.ref), storageAccount, storageContainer, storageBlob)
+        return GenerationFactory.GenerationResult(Output(resourceName), storageBlob)
     }
 }

@@ -13,10 +13,9 @@ object ZoneFactory : GenerationFactory<Application.Route53, ZoneFactory.Output> 
     override fun mayRun(entity: Application.Route53, context: GenerationContext) = context.output.check(context.webapp, InfoFactory)
 
     override fun generate(entity: Application.Route53, context: GenerationContext): GenerationFactory.GenerationResult<Output> {
-        val resourceGroup = context.output.get(context.webapp, InfoFactory).resourceGroup
         val dnsZone = dns_zone(context.names.tf(entity.zone)) {
             name = entity.zone
-            resource_group_name = "kotless-zone-test"
+            resource_group_name = context.schema.config.resourceGroup!!
         }
 
         return GenerationFactory.GenerationResult(Output(dnsZone::name.ref, "${entity.alias}.${entity.zone}"), dnsZone)

@@ -13,11 +13,11 @@ import io.terraformkt.hcl.ref
 
 object StorageFactory : GenerationFactory<Application, StorageFactory.Output> {
     data class Output(val storageBlob: StorageBlob, val storageAccountSas: StorageAccountSas)
+
     override fun mayRun(entity: Application, context: GenerationContext): Boolean = context.output.check(context.webapp, InfoFactory)
         && context.output.check(context.webapp, ZipArchiveFactory)
 
     override fun generate(entity: Application, context: GenerationContext): GenerationFactory.GenerationResult<StorageFactory.Output> {
-        println("STORAGE!!!")
         val storageAccount = context.output.get(context.webapp, InfoFactory).storageAccount
         val storageContainer = context.output.get(context.webapp, InfoFactory).storageContainer
         val zipArchiveRef = context.output.get(context.webapp, ZipArchiveFactory).artifactCompleteRef
@@ -65,7 +65,7 @@ object StorageFactory : GenerationFactory<Application, StorageFactory.Output> {
             source = "${directory.parent}/result.zip"
             depends_on = arrayOf(zipArchiveRef)
         }
-        return GenerationFactory.GenerationResult(Output(storageBlob, storageAccountSas), storageAccount, storageAccountSas)
+        return GenerationFactory.GenerationResult(Output(storageBlob, storageAccountSas), storageAccountSas, storageBlob)
     }
 
 }

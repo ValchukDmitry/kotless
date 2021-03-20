@@ -24,13 +24,11 @@ object AzureGenerator {
         Application::class to setOf(InfoFactory, ZipArchiveFactory, StorageFactory),
         KotlessConfig.Terraform::class to setOf(ProvidersFactory),
 
-        Application.Route53::class to setOf(CertificateFactory, RecordFactory, ZoneFactory),
+        Application.Route53::class to setOf(/*CertificateFactory,*/ RecordFactory, ZoneFactory),
 
         StaticResource::class to setOf(StaticResourceFactory),
         Lambda::class to setOf(FunctionFactory),
 
-//        Application.Events.Scheduled::class to setOf(ScheduledEventsFactory),
-//
         Application.ApiGateway.StaticRoute::class to setOf(StaticRouteFactory),
         Application.ApiGateway.DynamicRoute::class to setOf(DynamicRouteFactory)
     )

@@ -6,14 +6,11 @@ import io.kotless.gen.factory.azure.ZipArchiveFactory
 import io.kotless.gen.factory.azure.info.InfoFactory
 import io.kotless.gen.factory.azure.storage.StorageFactory
 import io.kotless.resource.Lambda
-import io.terraformkt.azurerm.data.storage.storage_account_sas
 import io.terraformkt.azurerm.resource.app.app_service_plan
 import io.terraformkt.azurerm.resource.application.application_insights
 import io.terraformkt.azurerm.resource.function.FunctionApp
 import io.terraformkt.azurerm.resource.function.function_app
-import io.terraformkt.azurerm.resource.storage.storage_blob
 import io.terraformkt.hcl.ref
-import io.terraformkt.terraform.TFResource
 
 object FunctionFactory : GenerationFactory<Lambda, FunctionFactory.Output> {
     data class Output(val function: FunctionApp)
@@ -45,9 +42,11 @@ object FunctionFactory : GenerationFactory<Lambda, FunctionFactory.Output> {
             location = resourceGroup::location.ref
             resource_group_name = resourceGroup::name.ref
             application_type = "java"
-            tags(mapOf(
-                "hidden-link:${resourceGroup::id.ref}/providers/Microsoft.Web/sites/${context.names.azure(entity.name)}" to "Resource"
-            ))
+            tags(
+                mapOf(
+                    "hidden-link:${resourceGroup::id.ref}/providers/Microsoft.Web/sites/${context.names.azure(entity.name)}" to "Resource"
+                )
+            )
         }
 
         val functionApp = function_app("functionapp") {
@@ -60,32 +59,22 @@ object FunctionFactory : GenerationFactory<Lambda, FunctionFactory.Output> {
             https_only = true
             version = "~3"
 
-            appSettings(mapOf(
-                "FUNCTIONS_WORKER_RUNTIME" to "java",
-                "FUNCTION_APP_EDIT_MODE" to "readonly",
-                "APPLICATIONINSIGHTS_CONNECTION_STRING" to
-                    "InstrumentationKey=${appInsight::instrumentation_key.ref};IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/",
-                "APPINSIGHTS_INSTRUMENTATIONKEY" to appInsight::instrumentation_key.ref,
-                "KOTLESS_PACKAGES" to "org.example",
-                "WEBSITE_RUN_FROM_PACKAGE" to
-                    "https://${storageAccount.name}.blob.core.windows.net/${storageContainer.name}/${storageBlob.name}${storageAccountSas::sas.ref}"
-            ))
+            appSettings(
+                mapOf(
+                    "FUNCTIONS_WORKER_RUNTIME" to "java",
+                    "FUNCTION_APP_EDIT_MODE" to "readonly",
+                    "APPLICATIONINSIGHTS_CONNECTION_STRING" to
+                        "InstrumentationKey=${appInsight::instrumentation_key.ref};IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/",
+                    "APPINSIGHTS_INSTRUMENTATIONKEY" to appInsight::instrumentation_key.ref,
+                    "WEBSITE_RUN_FROM_PACKAGE" to
+                        "https://${storageAccount.name}.blob.core.windows.net/${storageContainer::name.ref}/${storageBlob::name.ref}${storageAccountSas::sas.ref}"
+                ) + entity.config.environment
+            )
         }
 
         return GenerationFactory.GenerationResult(
             Output(functionApp), appServicePlan, storageAccount, storageContainer, appInsight, functionApp
         )
 
-    }
-}
-
-
-class ResourceFromString(
-    id: String,
-    val type: String,
-    val value: String
-) : TFResource(id, type) {
-    override fun render(): String {
-        return value
     }
 }

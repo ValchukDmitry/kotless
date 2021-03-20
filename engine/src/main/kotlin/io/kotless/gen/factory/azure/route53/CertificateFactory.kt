@@ -4,23 +4,23 @@ import io.kotless.Application
 import io.kotless.gen.GenerationContext
 import io.kotless.gen.GenerationFactory
 import io.kotless.gen.factory.azure.info.InfoFactory
-import io.kotless.gen.factory.aws.infra.ProvidersFactory
+import io.terraformkt.azurerm.data.app.AppServiceCertificate
 import io.terraformkt.azurerm.data.app.app_service_certificate
 import io.terraformkt.hcl.ref
 
-object CertificateFactory : GenerationFactory<Application.Route53, Unit> {
+object CertificateFactory : GenerationFactory<Application.Route53, CertificateFactory.Output> {
 
-    override fun mayRun(entity: Application.Route53, context: GenerationContext) = context.output.check(context.schema.config.terraform, ProvidersFactory)
+    data class Output(val certificate: AppServiceCertificate)
 
-    override fun generate(entity: Application.Route53, context: GenerationContext): GenerationFactory.GenerationResult<Unit> {
+    override fun mayRun(entity: Application.Route53, context: GenerationContext) = context.output.check(context.webapp, InfoFactory)
+
+    override fun generate(entity: Application.Route53, context: GenerationContext): GenerationFactory.GenerationResult<CertificateFactory.Output> {
         val resourceGroup = context.output.get(context.webapp, InfoFactory).resourceGroup
         val cert = app_service_certificate(context.names.tf(entity.certificate)) {
-            name = entity.fqdn
+            name = entity.certificate
             resource_group_name = resourceGroup::name.ref
-            location = resourceGroup::location.ref
-
         }
 
-        return GenerationFactory.GenerationResult(Unit, cert)
+        return GenerationFactory.GenerationResult(Output(cert), cert)
     }
 }

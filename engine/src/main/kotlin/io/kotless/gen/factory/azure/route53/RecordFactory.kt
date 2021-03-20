@@ -21,13 +21,13 @@ object RecordFactory : GenerationFactory<Application.Route53, RecordFactory.Outp
     override fun generate(entity: Application.Route53, context: GenerationContext): GenerationFactory.GenerationResult<Output> {
         val lambda = context.output.get(context.schema.lambdas.all.first(), FunctionFactory)
         val dnsZone = context.output.get(entity, ZoneFactory)
+//        val certificate = context.output.get(entity, CertificateFactory).certificate
         val resourceGroup = context.output.get(context.webapp, InfoFactory).resourceGroup
         val cnameRecord = dns_cname_record(context.names.tf(entity.zone)) {
             name = entity.alias
             zone_name = dnsZone.zone_name
             resource_group_name = resourceGroup::name.ref
             ttl = 300
-//            target_resource_id = lambda.function::id.ref
             record = lambda.function::default_hostname.ref
         }
 
@@ -56,15 +56,10 @@ object RecordFactory : GenerationFactory<Application.Route53, RecordFactory.Outp
             app_service_name = lambda.function::name.ref
             resource_group_name = resourceGroup::name.ref
             depends_on = arrayOf(txtRecordAsuid.hcl_ref)
+//            ssl_state = "SniEnabled"
+//            thumbprint = certificate.hcl_ref
         }
 
-        val integration = app_service_custom_hostname_binding(context.names.tf(entity.alias)) {
-            hostname = "${entity.alias}.${entity.zone}"
-            app_service_name = lambda.function::name.ref
-            resource_group_name = resourceGroup::name.ref
-        }
-
-
-        return GenerationFactory.GenerationResult(Output(""), cnameRecord, hostnameBinding, txtRecordAsuid, txtRecordAwverify, integration)
+        return GenerationFactory.GenerationResult(Output(""), cnameRecord, hostnameBinding, txtRecordAsuid, txtRecordAwverify)
     }
 }

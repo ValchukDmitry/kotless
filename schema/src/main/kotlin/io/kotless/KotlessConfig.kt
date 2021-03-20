@@ -19,7 +19,9 @@ data class KotlessConfig(
     val dsl: DSL,
     val terraform: Terraform,
     val optimization: Optimization = Optimization(),
-    val cloud: String = "aws"
+    val cloud: String = "aws",
+    val resourceGroup: String?,
+    val storageAccountName: String?
 ) : Visitable {
 
     /**

@@ -38,11 +38,13 @@ class FunctionHandler {
             logger.trace("Request is {}", jsonRequest)
 
             Application.init()
+            val origPath = request.headers["x-original-path"] ?: ""
             val path = request.uri.path
 
+            logger.info(origPath)
             val requestContext = HttpRequest.RequestContext(
-                path,
-                path,
+                origPath,
+                origPath,
                 accountId = "-1",
                 resourceId = "-1",
                 stage = "/",
@@ -55,8 +57,8 @@ class FunctionHandler {
                 domainName = "IdK"
             )
 
-            val requestBody = HttpRequest(path, path, HttpMethod.valueOf(request.httpMethod.name), null, request.queryParameters, null, requestContext, jsonRequest, false)
-            val resourceKey = RouteKey(HttpMethod.valueOf(request.httpMethod.name), path)
+            val requestBody = HttpRequest(origPath, origPath, HttpMethod.valueOf(request.httpMethod.name), null, request.queryParameters, null, requestContext, jsonRequest, false)
+            val resourceKey = RouteKey(HttpMethod.valueOf(request.httpMethod.name), origPath)
 
             RoutesDispatcher.dispatch(requestBody, resourceKey)
         } catch (e: Throwable) {
